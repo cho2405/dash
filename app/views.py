@@ -9,7 +9,8 @@ from django.template import loader
 from django.http import HttpResponse
 from django import template
 from django.db.models import Count
-
+from django.core import serializers
+    
 from .models import Trading
 
 @login_required(login_url="/login/")
@@ -24,11 +25,24 @@ def index(request):
 
 def trades_json(request, context):
     print("!!!")
+    import json
+    import pandas as pd
 
-    gu_trades = Trading.objects.values('GU_CODE','TRADE_MONTH').annotate(cnt=Count('TRADE_MONTH')).order_by()
-    print(gu_trades)
+    gu_trades = Trading.objects.values('GU_CODE','TRADE_MONTH').annotate(GU_TRADE_CNT=Count('TRADE_MONTH'))
+    df = pd.DataFrame(list(gu_trades))
+    df.drop_duplicates(["GU_CODE", "TRADE_MONTH"], inplace=True)
     
-    context['gu_trades'] = gu_trades
+    # Montth filtering
+
+    set_month = 2
+    df = df[df['TRADE_MONTH'] == set_month]
+    df = df.pivot(index="GU_CODE", columns="TRADE_MONTH", values="GU_TRADE_CNT")    
+    gu_json = df[set_month].to_json(orient="columns")
+
+        
+    #gu_json = json.dumps(gu_json)
+    context['gu_json'] = gu_json
+    print(gu_json)
     return render(request, 'maps-jqvmap.html', context)
 
 
@@ -54,11 +68,11 @@ def pages(request):
 
         html_template = loader.get_template( 'page-404.html' )
         return HttpResponse(html_template.render(context, request))
-
+'''
     except:
     
         html_template = loader.get_template( 'page-500.html' )
         return HttpResponse(html_template.render(context, request))
-
+'''
     
     
