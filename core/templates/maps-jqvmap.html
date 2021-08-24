@@ -12,6 +12,30 @@
             margin-left: auto;  
             margin-right: auto;              
 		}
+        .info { 
+            padding: 6px 8px; 
+            font: 14px/16px Arial, Helvetica, sans-serif; 
+            background: white; 
+            background: rgba(255,255,255,0.8); 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+            border-radius: 5px; 
+        } 
+        .info h4 { 
+            margin: 0 0 5px; 
+            color: #777; 
+        }
+        .legend { 
+            text-align: left; 
+            line-height: 18px; 
+            color: #555; 
+        } 
+        .legend i { 
+            width: 18px; 
+            height: 18px; 
+            float: left; 
+            margin-right: 8px; 
+            opacity: 0.7; 
+        }
 	</style>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
@@ -39,8 +63,7 @@
 					<div class="card-body">
 						<div class="col-md-10 ml-auto mr-auto">
 							<div class="mapcontainer">
-								<!--<div id="map-example" class="vmap" style="height: 400px"></div>-->
-                                <div id='map'></div>
+								<div id='map'></div>
 							</div>
 						</div>
 					</div>
@@ -53,15 +76,10 @@
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
 	<!-- Atlantis DEMO methods, don't include it in your project! -->
-<script src="/static/assets/js/setting-demo2.js"></script>
+    <script src="/static/assets/js/setting-demo2.js"></script>
     <script>    
 	var map = L.map('map').setView([36.74739, 128], 7);
-        
-    var OpenStreetMap_HOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-        maxZoom: 20,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/"target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
-});
-    
+
 	var default_map = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
 		maxZoom: 18,
 		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
@@ -70,10 +88,31 @@
 		tileSize: 512,
 		zoomOffset: -1
 	});
-    
 
-    OpenStreetMap_HOT.addTo(map);
+    default_map.addTo(map);
+
+    var geojson;
+               
+    var input_geojson = {{ geo_json | safe }}
+    var input_gujson = {{ gu_json | safe}}
         
+ 	// control that shows state info on hover
+	var info = L.control();
+
+	info.onAdd = function (map) {
+		this._div = L.DomUtil.create('div', 'info');
+		this.update();
+		return this._div;
+	};
+
+	info.update = function (props) {
+		this._div.innerHTML = '<h4>7월 집 거래량</h4>' +  (props ?
+			'<b>' + props.SIG_KOR_NM + '</b><br />' + '(' + input_gujson[props.SIG_CD] + ' 명)'
+			: '지도에 마우스를 가져가세요');
+	};
+
+	info.addTo(map);
+
     function highlightFeature(e) {
         var layer = e.target;
 
@@ -87,13 +126,18 @@
         if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
             layer.bringToFront();
         }
+        info.update(layer.feature.properties);
     }
 
     function resetHighlight(e) {
         geojson.resetStyle(e.target);
+        info.update();
     }
         
-    var geojson;
+    function zoomToFeature(e) {
+        map.fitBounds(e.target.getBounds());
+    }
+        
     function zoomToFeature(e) {
         map.fitBounds(e.target.getBounds());
     }
@@ -105,9 +149,6 @@
             click: zoomToFeature
         });
     }
-    function zoomToFeature(e) {
-    map.fitBounds(e.target.getBounds());
-}
     
     function style() {
         return {
@@ -119,7 +160,7 @@
             fillOpacity: 0.7
         };
     }
-        
+    
     function getColor(d) {
         return d > 1000 ? '#800026' :
                d > 500  ? '#BD0026' :
@@ -130,17 +171,43 @@
                d > 10   ? '#FED976' :
                           '#FFEDA0';
     }
-        
-    var input_geojson = {{ geo_json | safe }}
-    var input_gujson = {{ gu_json | safe}}
-    
+ 
     geojson = L.geoJSON(input_geojson, {
         style: function(feature) {
-            return {color: getColor(input_gujson[feature.properties.SIG_CD])};
+            return {
+                fillColor: getColor(input_gujson[feature.properties.SIG_CD]),
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0.7
+            };
         },
         onEachFeature: onEachFeature
-
     }).addTo(map);
+        
+	var legend = L.control({position: 'bottomright'});
+
+	legend.onAdd = function (map) {
+		var div = L.DomUtil.create('div', 'info legend'),
+			grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+			labels = [],
+			from, to;
+
+		for (var i = 0; i < grades.length; i++) {
+			from = grades[i];
+			to = grades[i + 1];
+
+			labels.push(
+				'<i style="background:' + getColor(from + 1) + '"></i> ' +
+				from + (to ? '&ndash;' + to : '+'));
+		}
+
+		div.innerHTML = labels.join('<br>');
+		return div;
+	};
+
+	legend.addTo(map);
 
     </script>
 {% endblock javascripts %}
