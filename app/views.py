@@ -8,6 +8,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template import loader
 from django.http import HttpResponse
 from django import template
+from django.db.models import Count
+
+from .models import Trading
 
 @login_required(login_url="/login/")
 def index(request):
@@ -17,6 +20,17 @@ def index(request):
 
     html_template = loader.get_template( 'index.html' )
     return HttpResponse(html_template.render(context, request))
+
+
+def trades_json(request, context):
+    print("!!!")
+
+    gu_trades = Trading.objects.values('GU_CODE','TRADE_MONTH').annotate(cnt=Count('TRADE_MONTH')).order_by()
+    print(gu_trades)
+    
+    context['gu_trades'] = gu_trades
+    return render(request, 'maps-jqvmap.html', context)
+
 
 @login_required(login_url="/login/")
 def pages(request):
@@ -28,6 +42,11 @@ def pages(request):
         load_template      = request.path.split('/')[-1]
         context['segment'] = load_template
         
+        
+        if load_template == "maps-jqvmap.html":
+            print(load_template)
+            return HttpResponse(trades_json(request, context))
+            
         html_template = loader.get_template( load_template )
         return HttpResponse(html_template.render(context, request))
         
@@ -40,3 +59,6 @@ def pages(request):
     
         html_template = loader.get_template( 'page-500.html' )
         return HttpResponse(html_template.render(context, request))
+
+    
+    
