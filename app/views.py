@@ -23,6 +23,16 @@ def index(request):
     return HttpResponse(html_template.render(context, request))
 
 
+def load_geodata(file_name):
+    import json # import json module
+    
+    # with statement
+    with open(file_name) as json_file:
+        json_data = json.load(json_file)
+        print(json_data)
+        return json_data
+
+
 def trades_json(request, context):
     print("!!!")
     import json
@@ -42,7 +52,12 @@ def trades_json(request, context):
         
     #gu_json = json.dumps(gu_json)
     context['gu_json'] = gu_json
-    print(gu_json)
+    
+    file_name = 'TL_SCCO_SIG.json'
+    context['geo_json'] = json.dumps(load_geodata(file_name))
+    
+    
+    
     return render(request, 'maps-jqvmap.html', context)
 
 
