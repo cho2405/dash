@@ -24,17 +24,14 @@ def index(request):
 
 
 def load_geodata(file_name):
-    import json # import json module
+    import json
     
-    # with statement
     with open(file_name) as json_file:
         json_data = json.load(json_file)
-        print(json_data)
-        return json_data
+        return json.dumps(json_data)
+        
 
-
-def trades_json(request, context):
-    print("!!!")
+def load_trades_json(set_month):
     import json
     import pandas as pd
 
@@ -42,23 +39,17 @@ def trades_json(request, context):
     df = pd.DataFrame(list(gu_trades))
     df.drop_duplicates(["GU_CODE", "TRADE_MONTH"], inplace=True)
     
-    # Montth filtering
-
-    set_month = 2
     df = df[df['TRADE_MONTH'] == set_month]
     df = df.pivot(index="GU_CODE", columns="TRADE_MONTH", values="GU_TRADE_CNT")    
     gu_json = df[set_month].to_json(orient="columns")
+    
+    return gu_json
 
-        
-    #gu_json = json.dumps(gu_json)
-    context['gu_json'] = gu_json
+
+def load_trades_table():
+    gu_tables = Trading.objects.all().values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')[:30]
     
-    file_name = 'TL_SCCO_SIG.json'
-    context['geo_json'] = json.dumps(load_geodata(file_name))
-    
-    
-    
-    return render(request, 'maps-jqvmap.html', context)
+    return gu_tables
 
 
 @login_required(login_url="/login/")
@@ -67,14 +58,16 @@ def pages(request):
     # All resource paths end in .html.
     # Pick out the html file name from the url. And load that template.
     try:
-        
         load_template      = request.path.split('/')[-1]
         context['segment'] = load_template
-        
-        
+                
         if load_template == "maps-jqvmap.html":
-            print(load_template)
-            return HttpResponse(trades_json(request, context))
+            set_month = 2
+            file_name = 'TL_SCCO_SIG.json'
+            context['gu_json'] = load_trades_json(set_month)
+            context['geo_json'] = load_geodata(file_name)
+            context['gu_table'] = load_trades_table()
+            return HttpResponse(render(request, load_template, context))
             
         html_template = loader.get_template( load_template )
         return HttpResponse(html_template.render(context, request))
@@ -88,6 +81,7 @@ def pages(request):
     
         html_template = loader.get_template( 'page-500.html' )
         return HttpResponse(html_template.render(context, request))
+
 '''
     
     

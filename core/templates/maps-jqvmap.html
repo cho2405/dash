@@ -44,7 +44,7 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
             integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
             crossorigin=""></script>
-    <!--mapboxGL-->
+
 {% endblock stylesheets %}
 
 {% block content %}
@@ -68,6 +68,44 @@
 						</div>
 					</div>
 				</div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Hoverable Table</div>
+                    </div>
+                    <div class="card-body">
+                        <table id="multi-filter-select" class="display table table-hover table-head-bg-info">
+                            <thead>
+                                <tr>
+                                    <th>지역구 코드</th>
+                                    <th>동 이름</th>
+                                    <th>거래일</th>
+                                    <th>아파트</th>
+                                    <th>거래 가격</th>
+                                </tr>
+                            </thead>
+                            <tfoot>
+                                <tr>
+                                    <th>지역구 코드</th>
+                                    <th>동 이름</th>
+                                    <th>거래일</th>
+                                    <th>아파트</th>
+                                    <th>거래 가격</th>
+                                </tr>
+                            </tfoot>
+                            <tbody>
+                                {% for opp in gu_table %}
+                                    <tr>
+                                        <td>{{ opp.GU_CODE }}</td>
+                                        <td>{{ opp.DONG_NAME }}</td>
+                                        <td>{{ opp.TRADE_DATE }}</td>
+                                        <td>{{ opp.APT_NAME }}</td>
+                                        <td>{{ opp.TRADE_PRICE }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 			</div>
 		</div>
 	</div>
@@ -138,10 +176,6 @@
         map.fitBounds(e.target.getBounds());
     }
         
-    function zoomToFeature(e) {
-        map.fitBounds(e.target.getBounds());
-    }
-
     function onEachFeature(feature, layer) {
         layer.on({
             mouseover: highlightFeature,
@@ -150,9 +184,9 @@
         });
     }
     
-    function style() {
+    function style(feature) {
         return {
-            fillColor: getColor(feature.properties.density),
+            fillColor: getColor(input_gujson[feature.properties.SIG_CD]),
             weight: 2,
             opacity: 1,
             color: 'white',
@@ -171,18 +205,9 @@
                d > 10   ? '#FED976' :
                           '#FFEDA0';
     }
- 
+   
     geojson = L.geoJSON(input_geojson, {
-        style: function(feature) {
-            return {
-                fillColor: getColor(input_gujson[feature.properties.SIG_CD]),
-                weight: 2,
-                opacity: 1,
-                color: 'white',
-                dashArray: '3',
-                fillOpacity: 0.7
-            };
-        },
+        style: style,
         onEachFeature: onEachFeature
     }).addTo(map);
         
@@ -209,5 +234,35 @@
 
 	legend.addTo(map);
 
+        
+    /* Table */
+    $(document).ready(function() {
+        $('#multi-filter-select').DataTable( {
+            "pageLength": 5,
+            initComplete: function () {
+                this.api().columns().every( function () {
+                    var column = this;
+                    var select = $('<select class="form-control"><option value=""></option></select>')
+                    .appendTo( $(column.footer()).empty() )
+                    .on( 'change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    } );
+
+                    column.data().unique().sort().each( function ( d, j ) {
+                        select.append( '<option value="'+d+'">'+d+'</option>' )
+                    } );
+                } );
+            }
+        });
+    });
+        
+        
+        
     </script>
 {% endblock javascripts %}
