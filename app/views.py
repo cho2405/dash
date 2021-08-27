@@ -10,6 +10,8 @@ from django.http import HttpResponse
 from django import template
 from django.db.models import Count
 from django.core import serializers
+from django.template.loader import render_to_string
+from django.http import JsonResponse
     
 from .models import Trading
 
@@ -36,6 +38,7 @@ def load_trades_json(set_month):
     import pandas as pd
 
     gu_trades = Trading.objects.values('GU_CODE','TRADE_MONTH').annotate(GU_TRADE_CNT=Count('TRADE_MONTH'))
+
     df = pd.DataFrame(list(gu_trades))
     df.drop_duplicates(["GU_CODE", "TRADE_MONTH"], inplace=True)
     
@@ -46,10 +49,30 @@ def load_trades_json(set_month):
     return gu_json
 
 
-def load_trades_table():
-    gu_tables = Trading.objects.all().values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')[:30]
+@login_required(login_url="/login/")
+def maps(request):
+    data = dict()
+    context = {}
+    if request.method == 'POST': 
+        search = request.POST.get('txtSearch')
+        gu_table = Trading.objects.filter(GU_CODE=search).values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')
+        context['gu_table'] = gu_table
+        
+        '''
+        data['html_table'] = render_to_string('maps-jqvmap.html',
+                             context,
+                             request = request
+                             )
+        '''
+        
+        #return JsonResponse(data)
+
+    set_month = 2
+    file_name = 'TL_SCCO_SIG.json'
+    context['gu_json'] = load_trades_json(set_month)
+    context['geo_json'] = load_geodata(file_name)
     
-    return gu_tables
+    return HttpResponse(render(request, 'maps-jqvmap.html', context))
 
 
 @login_required(login_url="/login/")
@@ -60,14 +83,6 @@ def pages(request):
     try:
         load_template      = request.path.split('/')[-1]
         context['segment'] = load_template
-                
-        if load_template == "maps-jqvmap.html":
-            set_month = 2
-            file_name = 'TL_SCCO_SIG.json'
-            context['gu_json'] = load_trades_json(set_month)
-            context['geo_json'] = load_geodata(file_name)
-            context['gu_table'] = load_trades_table()
-            return HttpResponse(render(request, load_template, context))
             
         html_template = loader.get_template( load_template )
         return HttpResponse(html_template.render(context, request))

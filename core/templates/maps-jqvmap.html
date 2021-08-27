@@ -73,6 +73,17 @@
                         <div class="card-title">Hoverable Table</div>
                     </div>
                     <div class="card-body">
+                        
+                        
+                        
+                        <form id="search" method="POST" action="{% url 'maps' %}">
+                            {% csrf_token %}
+    <input type="text" class="form-control" id="tokenfield1" name="txtSearch">
+    <button type="submit" class="btn btn-default js-filter">Submit</button>
+</form>
+                        
+                        
+                        
                         <table id="multi-filter-select" class="display table table-hover table-head-bg-info">
                             <thead>
                                 <tr>
@@ -102,6 +113,7 @@
                                         <td>{{ opp.TRADE_PRICE }}</td>
                                     </tr>
                                 {% endfor %}
+                                
                             </tbody>
                         </table>
                     </div>
@@ -169,7 +181,7 @@
 		return div;
 	};
 	legend.addTo(map);
-
+    
     // control layers
     var geojson;
                
@@ -199,6 +211,7 @@
         
     function zoomToFeature(e) {
         map.fitBounds(e.target.getBounds());
+        document.getElementById("tokenfield1").value = e.target.feature.properties.SIG_CD
     }
         
     function onEachFeature(feature, layer) {
@@ -235,12 +248,9 @@
         style: style,
         onEachFeature: onEachFeature
     }).addTo(map);
-        
-        
     geojson.eachLayer(function (layer) {
         layer.bindPopup(layer.feature.properties.SIG_KOR_NM);
     });
-
 
     // table created
     $(document).ready(function() {
@@ -267,8 +277,38 @@
                 } );
             }
         });
+       
     });
         
+    var filter =
+    function() {
+
+        $.ajax({
+            type: "POST",
+            url: "{% url 'maps' %}", 
+            dataType: 'json',
+        success: function(response) {
+            // display the newly friend to table.
+            /*
+                var articles = JSON.parse(response["gu_table"]);
+                var fields = instance[0]["fields"];
+                $("#multi-filter-select tbody").prepend(
+                    `<tr>
+                    <td>${fields["GU_CODE"]||""}</td>
+                    <td>${fields["DONG_NAME"]||""}</td>
+                    <td>${fields["TRADE_DATE"]||""}</td>
+                    <td>${fields["APT_NAME"]||""}</td>
+                    <td>${fields["TRADE_PRICE"]||""}</td>
+                    </tr>`
+                )
+                console.log(fields)
+                
+            */
+        }
+        });
+    };
+
+    $("#search").on("submit", ".js-filter", filter);
         
         
     </script>
