@@ -45,7 +45,7 @@ def load_trades_json(set_month):
     df = df[df['TRADE_MONTH'] == set_month]
     df = df.pivot(index="GU_CODE", columns="TRADE_MONTH", values="GU_TRADE_CNT")    
     gu_json = df[set_month].to_json(orient="columns")
-    
+
     return gu_json
 
 
@@ -53,24 +53,20 @@ def load_trades_json(set_month):
 def maps(request):
     data = dict()
     context = {}
-    if request.method == 'POST': 
-        search = request.POST.get('txtSearch')
-        gu_table = Trading.objects.filter(GU_CODE=search).values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')
-        context['gu_table'] = gu_table
-        
-        '''
-        data['html_table'] = render_to_string('maps-jqvmap.html',
-                             context,
-                             request = request
-                             )
-        '''
-        
-        #return JsonResponse(data)
-
     set_month = 2
     file_name = 'TL_SCCO_SIG.json'
     context['gu_json'] = load_trades_json(set_month)
     context['geo_json'] = load_geodata(file_name)
+    
+    
+    if request.method == 'POST': 
+        search = request.POST.get('search_gu_input')
+        print( request.POST)
+        gu_table = Trading.objects.filter(GU_CODE=search).values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')
+        context['results'] =  list(gu_table)
+        print(len(list(gu_table)))
+    
+        return JsonResponse(context)
     
     return HttpResponse(render(request, 'maps-jqvmap.html', context))
 

@@ -44,7 +44,7 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
             integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
             crossorigin=""></script>
-
+    
 {% endblock stylesheets %}
 
 {% block content %}
@@ -76,8 +76,7 @@
                         
                         
                         
-                        <form id="search" method="POST" action="{% url 'maps' %}">
-                            {% csrf_token %}
+                        <form id="search_gu" >
     <input type="text" class="form-control" id="tokenfield1" name="txtSearch">
     <button type="submit" class="btn btn-default js-filter">Submit</button>
 </form>
@@ -128,6 +127,8 @@
 	<!-- Atlantis DEMO methods, don't include it in your project! -->
     <script src="/static/assets/js/setting-demo2.js"></script>
     <script>    
+    console.log("########");
+  
 	var map = L.map('map').setView([36.74739, 128], 7);
     map.createPane('labels');
         
@@ -248,68 +249,108 @@
         style: style,
         onEachFeature: onEachFeature
     }).addTo(map);
+        
     geojson.eachLayer(function (layer) {
         layer.bindPopup(layer.feature.properties.SIG_KOR_NM);
     });
+            
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+        
+    
+    var table_option = {
+            "pageLength": 10,
+            destroy: true,
+            initComplete: function () {
+                    this.api().columns().every( function () {
+                        var column = this;
+                        var select = $('<select class="form-control"><option value=""></option></select>')
+                        .appendTo( $(column.footer()).empty() )
+                        .on( 'change', function () {
+                            
+                            var val = $.fn.dataTable.util.escapeRegex(
+                                $(this).val()
+                            );
+
+                            column
+                                .search( val ? '^'+val+'$' : '', true, false )
+                                .draw();
+                        } );
+
+                        column.data().unique().sort().each( function ( d, j ) {select.append( '<option value="'+d+'">'+d+'</option>' )} );
+                    } );
+                }
+        }  
 
     // table created
-    $(document).ready(function() {
-        $('#multi-filter-select').DataTable( {
-            "pageLength": 5,
-            initComplete: function () {
-                this.api().columns().every( function () {
-                    var column = this;
-                    var select = $('<select class="form-control"><option value=""></option></select>')
-                    .appendTo( $(column.footer()).empty() )
-                    .on( 'change', function () {
-                        var val = $.fn.dataTable.util.escapeRegex(
-                            $(this).val()
-                        );
+    $(document).ready(  function() {
+        var trade_table = $('#multi-filter-select').DataTable(table_option);
+        
+             trade_table.on('draw', function () {
+                trade_table.columns().indexes().each( function ( idx ) {
+                  var select = $(trade_table.column( idx ).footer()).find('select');
 
-                        column
-                            .search( val ? '^'+val+'$' : '', true, false )
-                            .draw();
-                    } );
+                  if ( select.val() === '' ) {
+                    select
+                      .empty()
+                      .append('<option value=""/>');
 
-                    column.data().unique().sort().each( function ( d, j ) {
-                        select.append( '<option value="'+d+'">'+d+'</option>' )
+                    trade_table.column(idx, {search:'applied'}).data().unique().sort().each( function ( d, j ) {
+                      select.append( '<option value="'+d+'">'+d+'</option>' );
                     } );
+                  }
                 } );
-            }
-        });
-       
+              } );
     });
         
-    var filter =
-    function() {
-
+    function destroyDataTable(tableId){
+        if ( $.fn.dataTable.isDataTable( tableId ) == true){ // verify if DataTable exists
+            $(tableId).DataTable().table().clear().draw();
+        }
+    }
+        
+    $("#search_gu").submit(function(e) {
+        e.preventDefault();
         $.ajax({
             type: "POST",
-            url: "{% url 'maps' %}", 
-            dataType: 'json',
-        success: function(response) {
-            // display the newly friend to table.
-            /*
-                var articles = JSON.parse(response["gu_table"]);
-                var fields = instance[0]["fields"];
-                $("#multi-filter-select tbody").prepend(
-                    `<tr>
-                    <td>${fields["GU_CODE"]||""}</td>
-                    <td>${fields["DONG_NAME"]||""}</td>
-                    <td>${fields["TRADE_DATE"]||""}</td>
-                    <td>${fields["APT_NAME"]||""}</td>
-                    <td>${fields["TRADE_PRICE"]||""}</td>
-                    </tr>`
-                )
-                console.log(fields)
-                
-            */
-        }
+            url: "maps-jqvmap.html",
+            headers: {'X-CSRFToken': csrftoken},
+            data: {                 
+                search_gu_input : $('#tokenfield1').val(),
+                 //csrfmiddlewaretoken: '{{ csrf_token }}',
+                 dataType: "json",
+             }
+        }).done(function(data) {
+            
+            var response = data['results'];
+            
+            destroyDataTable('#multi-filter-select'); //Destroy old dataTable with the old data
+            var table = $('#multi-filter-select').DataTable();
+       
+            for (var i in response) {
+                table.row.add([
+                    response[i].GU_CODE, 
+                   response[i].DONG_NAME,
+                    response[i].TRADE_DATE,
+                    response[i].APT_NAME,
+                    response[i].TRADE_PRICE,
+                ]).draw();
+            }
         });
-    };
-
-    $("#search").on("submit", ".js-filter", filter);
-        
-        
+    });
     </script>
 {% endblock javascripts %}

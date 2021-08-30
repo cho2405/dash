@@ -14,7 +14,7 @@ urlpatterns = [
 
     # Matches any html file
     
-    url(r'^maps-jqvmap$', views.maps, name='maps'),
-    re_path(r'^.*\.*', views.pages, name='pages'),
+    url(r'^maps-jqvmap*', views.maps, name='maps'),
+    #re_path(r'^.*\.*', views.pages, name='pages'),
 
 ]
