@@ -45,30 +45,60 @@ def load_trades_json(set_month):
     df = df[df['TRADE_MONTH'] == set_month]
     df = df.pivot(index="GU_CODE", columns="TRADE_MONTH", values="GU_TRADE_CNT")    
     gu_json = df[set_month].to_json(orient="columns")
-
+    print(gu_json)
     return gu_json
 
 
 @login_required(login_url="/login/")
-def maps(request):
+def maps(request, pg_num):
     data = dict()
     context = {}
-    set_month = 2
-    file_name = 'TL_SCCO_SIG.json'
-    context['gu_json'] = load_trades_json(set_month)
-    context['geo_json'] = load_geodata(file_name)
+    print('--------------')
+    context['months'] = Trading.objects.values('TRADE_MONTH').distinct()
+    print(context['months'])
     
     
-    if request.method == 'POST': 
-        search = request.POST.get('search_gu_input')
-        print( request.POST)
-        gu_table = Trading.objects.filter(GU_CODE=search).values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')
-        context['results'] =  list(gu_table)
-        print(len(list(gu_table)))
     
-        return JsonResponse(context)
+    if request.method == 'GET':
+        set_month = pg_num
+        print('GET')
+        print(set_month)
+        file_name = 'TL_SCCO_SIG.json'
+        context['gu_json'] = load_trades_json(set_month)
+        context['geo_json'] = load_geodata(file_name)
+        
+        html_template = loader.get_template( 'maps-jqvmap.html' )
+
+        return HttpResponse(html_template.render(context, request))
+        #return HttpResponse(render(request, 'maps-jqvmap.html', context))
     
-    return HttpResponse(render(request, 'maps-jqvmap.html', context))
+    from django.forms.models import model_to_dict
+
+    from django.core import serializers
+    import json
+    from django.core.serializers.json import DjangoJSONEncoder
+    if request.method == 'POST':
+        print("----")
+        if 'search_gu_input' in request.POST:
+            print( request.POST)
+            search = request.POST.get('search_gu_input')
+            gu_table = Trading.objects.filter(GU_CODE=search).values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')
+            #context['results'] = serializers.serialize('json', str(list(gu_table)))
+            context['results'] =  list(gu_table)
+            #context['results'] = json.dumps(list(gu_table), cls=DjangoJSONEncoder)
+            #context['results'] = json.dumps(list(gu_table)) 
+            
+            print('%%%%%')
+            print(type(list(gu_table)))
+            return JsonResponse(context)
+        
+        if 'search_month_input' in request.POST:
+            file_name = 'TL_SCCO_SIG.json'
+            context['gu_json'] = load_trades_json(set_month)
+            context['geo_json'] = load_geodata(file_name)
+            return JsonResponse(context)
+        
+    
 
 
 @login_required(login_url="/login/")

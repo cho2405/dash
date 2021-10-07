@@ -48,10 +48,14 @@
 {% endblock stylesheets %}
 
 {% block content %}
+
+
+
+
 	<div class="content">
 		<div class="row">
 			<div class="col-md-12">
-				<div class="card card-transparent">
+                <div class="card card-transparent">
 					<div class="card-header">
 						<h4 class="card-title text-center">
 							Vector Maps
@@ -60,6 +64,24 @@
 							Looks great on any resolution. Made by our friends from <a href="https://www.10bestdesign.com/jqvmap/">jQuery Vector Maps</a>.
 						</p>
 					</div>
+                    
+                    
+                <nav>
+  <div class="nav nav-tabs" id="my-tab" role="tablist">
+      
+
+        {% for m in months %}
+        <form action="{% url 'app:maps_url' pg_num=m.TRADE_MONTH %}" method='GET'>
+            <button type='submit' class="nav-link" id="nav-profile-tab" role="tab" aria-selected="false"> {{ m.TRADE_MONTH }} 월</button>
+        </form>
+        {% endfor %}
+      
+      
+  </div>
+</nav>
+<div class="tab-content" id="nav-tabContent">
+  <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
+      
 					<div class="card-body">
 						<div class="col-md-10 ml-auto mr-auto">
 							<div class="mapcontainer">
@@ -67,22 +89,26 @@
 							</div>
 						</div>
 					</div>
-				</div>
+    
+    </div>
+  <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">...</div>
+  <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">...</div>
+</div>
+
+
+                    
+                    
+                    
+				</div>		
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">Hoverable Table</div>
                     </div>
                     <div class="card-body">
-                        
-                        
-                        
                         <form id="search_gu" >
-    <input type="text" class="form-control" id="tokenfield1" name="txtSearch">
-    <button type="submit" class="btn btn-default js-filter">Submit</button>
-</form>
-                        
-                        
-                        
+                            <input type="text" class="form-control" id="tokenfield1" name="txtSearch">
+                            <button type="submit" class="btn btn-default js-filter">Submit</button>
+                        </form>
                         <table id="multi-filter-select" class="display table table-hover table-head-bg-info">
                             <thead>
                                 <tr>
@@ -157,6 +183,7 @@
 		this._div.innerHTML = '<h4>7월 집 거래량</h4>' +  (props ?
 			'<b>' + props.SIG_KOR_NM + '</b><br />' + '(' + input_gujson[props.SIG_CD] + ' 명)'
 			: '지도에 마우스를 가져가세요');
+        console.log(props);
 	};
 	info.addTo(map);
         
@@ -327,7 +354,7 @@
         e.preventDefault();
         $.ajax({
             type: "POST",
-            url: "maps-jqvmap.html",
+            url: "{% url 'app:maps_url' pg_num=3 %}",
             headers: {'X-CSRFToken': csrftoken},
             data: {                 
                 search_gu_input : $('#tokenfield1').val(),
@@ -335,7 +362,7 @@
                  dataType: "json",
              }
         }).done(function(data) {
-            
+            console.log('%%%%%');
             var response = data['results'];
             
             destroyDataTable('#multi-filter-select'); //Destroy old dataTable with the old data
@@ -352,5 +379,44 @@
             }
         });
     });
+    
+        /*
+    var triggerTabList = [].slice.call(document.querySelectorAll('#my-tab button'));
+    triggerTabList.forEach(function (triggerEl) {
+    var tabTrigger = new bootstrap.Tab(triggerEl);
+
+    triggerEl.addEventListener('click', function (event) {
+        console.log($(event.target).text().split('월')[0]);
+
+        event.preventDefault();
+
+        tabTrigger.show();
+    });
+
+    $('#my-tab button').click(function (e) {
+        e.preventDefault();
+
+        var url = $(this).attr("data-url");
+        alert(url);
+        var href = this.hash;
+        var pane = $(this);
+        console.log(url);
+        
+        
+        
+        location.href = url;
+        location.reload();
+        
+        
+        $(href).load(url,function(result){
+            console.log("xxx");
+            pane.tab('show');
+        });
+    });
+    
+    */
+          
     </script>
+
+
 {% endblock javascripts %}
