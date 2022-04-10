@@ -3,14 +3,59 @@
 {% block title %} Maps {% endblock %} 
 
 <!-- Specific Page CSS goes HERE  -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+	<style>
+		#map {
+			width: 800px;
+			height: 480px;
+            display: block;  
+            margin-left: auto;  
+            margin-right: auto;              
+		}
+        .info { 
+            padding: 6px 8px; 
+            font: 14px/16px Arial, Helvetica, sans-serif; 
+            background: white; 
+            background: rgba(255,255,255,0.8); 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+            border-radius: 5px; 
+        } 
+        .info h4 { 
+            margin: 0 0 5px; 
+            color: #777; 
+        }
+        .legend { 
+            text-align: left; 
+            line-height: 18px; 
+            color: #555; 
+        } 
+        .legend i { 
+            width: 18px; 
+            height: 18px; 
+            float: left; 
+            margin-right: 8px; 
+            opacity: 0.7; 
+        }
+	</style>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+          integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+          crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+            integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+            crossorigin=""></script>
+    
+{% endblock stylesheets %}
 
 {% block content %}
+
+
+
 
 	<div class="content">
 		<div class="row">
 			<div class="col-md-12">
-				<div class="card card-transparent">
+                <div class="card card-transparent">
 					<div class="card-header">
 						<h4 class="card-title text-center">
 							Vector Maps
@@ -19,49 +64,355 @@
 							Looks great on any resolution. Made by our friends from <a href="https://www.10bestdesign.com/jqvmap/">jQuery Vector Maps</a>.
 						</p>
 					</div>
+                    
+                    
+                <nav>
+  <div class="nav nav-tabs" id="my-tab" role="tablist">
+      
+
+        {% for m in months %}
+        <form action="{% url 'app:maps_url' pg_num=m.TRADE_MONTH %}" method='GET'>
+            <button type='submit' class="nav-link" id="nav-home" role="tab" aria-selected="false"> {{ m.TRADE_MONTH }} 월</button>
+        </form>
+        {% endfor %}
+      
+      
+  </div>
+</nav>
+<div class="tab-content" id="nav-tabContent">
+  <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
+      
 					<div class="card-body">
 						<div class="col-md-10 ml-auto mr-auto">
 							<div class="mapcontainer">
-								<div id="map-example" class="vmap" style="height: 400px"></div>
+								<div id='map'></div>
 							</div>
 						</div>
 					</div>
-				</div>
+    
+    </div>
+  
+</div>
+
+
+                    
+                    
+                    
+				</div>		
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Hoverable Table</div>
+                    </div>
+                    <div class="card-body">
+                        <form id="search_gu" >
+                            <input type="text" class="form-control" id="tokenfield1" name="txtSearch">
+                            <button type="submit" class="btn btn-default js-filter">Submit</button>
+                        </form>
+                        <table id="multi-filter-select" class="display table table-hover table-head-bg-info">
+                            <thead>
+                                <tr>
+                                    <th>지역구 코드</th>
+                                    <th>동 이름</th>
+                                    <th>거래일</th>
+                                    <th>아파트</th>
+                                    <th>거래 가격</th>
+                                </tr>
+                            </thead>
+                            <tfoot>
+                                <tr>
+                                    <th>지역구 코드</th>
+                                    <th>동 이름</th>
+                                    <th>거래일</th>
+                                    <th>아파트</th>
+                                    <th>거래 가격</th>
+                                </tr>
+                            </tfoot>
+                            <tbody>
+                                {% for opp in gu_table %}
+                                    <tr>
+                                        <td>{{ opp.GU_CODE }}</td>
+                                        <td>{{ opp.DONG_NAME }}</td>
+                                        <td>{{ opp.TRADE_DATE }}</td>
+                                        <td>{{ opp.APT_NAME }}</td>
+                                        <td>{{ opp.TRADE_PRICE }}</td>
+                                    </tr>
+                                {% endfor %}
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 			</div>
 		</div>
 	</div>
-
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
-
 	<!-- Atlantis DEMO methods, don't include it in your project! -->
-	<script src="/static/assets/js/setting-demo2.js"></script>
-	<script>
-		$('#map-example').vectorMap(
-		{
-			map: 'world_en',
-			backgroundColor: 'transparent',
-			borderColor: '#fff',
-			borderWidth: 2,
-			color: '#e4e4e4',
-			enableZoom: true,
-			hoverColor: '#35cd3a',
-			hoverOpacity: null,
-			normalizeFunction: 'linear',
-			scaleColors: ['#b6d6ff', '#005ace'],
-			selectedColor: '#35cd3a',
-			selectedRegions: ['ID', 'RU', 'US', 'AU'],
-			showTooltip: true,
-			onRegionClick: function(element, code, region)
-			{
-				return false;
-			},
-			onResize: function (element, width, height) {
-				console.log('Map Size: ' +  width + 'x' +  height);
-			},
-		});
-	</script>
+    <script src="/static/assets/js/setting-demo2.js"></script>
+    <script>
+  
+	var map = L.map('map').setView([36.74739, 128], 7);
+    map.createPane('labels');
+        
+    var cartodbAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attribution">CARTO</a>';
+
+	var positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', {
+		attribution: cartodbAttribution
+	}).addTo(map);
+
+	var positronLabels = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png', {
+		attribution: cartodbAttribution,
+		pane: 'labels'
+	}).addTo(map);
+
+        
+ 	// control that shows state info on hover
+	var info = L.control();
+
+	info.onAdd = function (map) {
+		this._div = L.DomUtil.create('div', 'info');
+		this.update();
+		return this._div;
+	};
+
+	info.update = function (props) {
+		this._div.innerHTML = '<h4>7월 집 거래량</h4>' +  (props ?
+			'<b>' + props.SIG_KOR_NM + '</b><br />' + '(' + input_gujson[props.SIG_CD] + ' 명)'
+			: '지도에 마우스를 가져가세요');
+	};
+	info.addTo(map);
+        
+    // control that shows legend  
+	var legend = L.control({position: 'bottomright'});
+
+	legend.onAdd = function (map) {
+		var div = L.DomUtil.create('div', 'info legend'),
+			grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+			labels = [],
+			from, to;
+
+		for (var i = 0; i < grades.length; i++) {
+			from = grades[i];
+			to = grades[i + 1];
+
+			labels.push(
+				'<i style="background:' + getColor(from + 1) + '"></i> ' +
+				from + (to ? '&ndash;' + to : '+'));
+		}
+
+		div.innerHTML = labels.join('<br>');
+		return div;
+	};
+	legend.addTo(map);
+    
+    // control layers
+    var geojson;
+               
+    var input_geojson = {{ geo_json | safe }}
+    var input_gujson = {{ gu_json | safe}}
+        
+    function highlightFeature(e) {
+        var layer = e.target;
+
+        layer.setStyle({
+            weight: 5,
+            color: '#666',
+            dashArray: '',
+            fillOpacity: 0.7
+        });
+
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+            layer.bringToFront();
+        }
+        info.update(layer.feature.properties);
+    }
+
+    function resetHighlight(e) {
+        geojson.resetStyle(e.target);
+        info.update();
+    }
+        
+    function zoomToFeature(e) {
+        map.fitBounds(e.target.getBounds());
+        document.getElementById("tokenfield1").value = e.target.feature.properties.SIG_CD
+    }
+        
+    function onEachFeature(feature, layer) {
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight,
+            click: zoomToFeature
+        });
+    }
+    
+    function style(feature) {
+        return {
+            fillColor: getColor(input_gujson[feature.properties.SIG_CD]),
+            weight: 2,
+            opacity: 1,
+            color: 'white',
+            dashArray: '3',
+            fillOpacity: 0.7
+        };
+    }
+    
+    function getColor(d) {
+        return d > 1000 ? '#800026' :
+               d > 500  ? '#BD0026' :
+               d > 200  ? '#E31A1C' :
+               d > 100  ? '#FC4E2A' :
+               d > 50   ? '#FD8D3C' :
+               d > 20   ? '#FEB24C' :
+               d > 10   ? '#FED976' :
+                          '#FFEDA0';
+    }
+   
+    geojson = L.geoJSON(input_geojson, {
+        style: style,
+        onEachFeature: onEachFeature
+    }).addTo(map);
+        
+    geojson.eachLayer(function (layer) {
+        layer.bindPopup(layer.feature.properties.SIG_KOR_NM);
+    });
+            
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+        
+    
+    var table_option = {
+            "pageLength": 10,
+            destroy: true,
+            initComplete: function () {
+                    this.api().columns().every( function () {
+                        var column = this;
+                        var select = $('<select class="form-control"><option value=""></option></select>')
+                        .appendTo( $(column.footer()).empty() )
+                        .on( 'change', function () {
+                            
+                            var val = $.fn.dataTable.util.escapeRegex(
+                                $(this).val()
+                            );
+
+                            column
+                                .search( val ? '^'+val+'$' : '', true, false )
+                                .draw();
+                        } );
+
+                        column.data().unique().sort().each( function ( d, j ) {select.append( '<option value="'+d+'">'+d+'</option>' )} );
+                    } );
+                }
+        }  
+
+    // table created
+    $(document).ready(  function() {
+        var trade_table = $('#multi-filter-select').DataTable(table_option);
+        
+             trade_table.on('draw', function () {
+                trade_table.columns().indexes().each( function ( idx ) {
+                  var select = $(trade_table.column( idx ).footer()).find('select');
+
+                  if ( select.val() === '' ) {
+                    select
+                      .empty()
+                      .append('<option value=""/>');
+
+                    trade_table.column(idx, {search:'applied'}).data().unique().sort().each( function ( d, j ) {
+                      select.append( '<option value="'+d+'">'+d+'</option>' );
+                    } );
+                  }
+                } );
+              } );
+    });
+        
+    function destroyDataTable(tableId){
+        if ( $.fn.dataTable.isDataTable( tableId ) == true){ // verify if DataTable exists
+            $(tableId).DataTable().table().clear().draw();
+        }
+    }
+                              
+    $("#search_gu").submit(function(e) {
+        e.preventDefault();
+        
+        $.ajax({
+            type: "POST",
+            //url: "{% url 'app:maps_url' pg_num=3 %}",
+            headers: {'X-CSRFToken': csrftoken},
+            data: {                 
+                search_gu_input : $('#tokenfield1').val(),
+                dataType: "json",
+             }
+        }).done(function(data) {
+            var response = data;
+            
+            destroyDataTable('#multi-filter-select'); //Destroy old dataTable with the old data
+            var table = $('#multi-filter-select').DataTable();
+       
+            for (var i in response) {
+                table.row.add([
+                    response[i].GU_CODE, 
+                   response[i].DONG_NAME,
+                    response[i].TRADE_DATE,
+                    response[i].APT_NAME,
+                    response[i].TRADE_PRICE,
+                ]).draw();
+            }
+        });
+    });
+    
+        /*
+    var triggerTabList = [].slice.call(document.querySelectorAll('#my-tab button'));
+    triggerTabList.forEach(function (triggerEl) {
+    var tabTrigger = new bootstrap.Tab(triggerEl);
+
+    triggerEl.addEventListener('click', function (event) {
+        console.log($(event.target).text().split('월')[0]);
+
+        event.preventDefault();
+
+        tabTrigger.show();
+    });
+
+    $('#my-tab button').click(function (e) {
+        e.preventDefault();
+
+        var url = $(this).attr("data-url");
+        alert(url);
+        var href = this.hash;
+        var pane = $(this);
+        console.log(url);
+        
+        
+        
+        location.href = url;
+        location.reload();
+        
+        
+        $(href).load(url,function(result){
+            console.log("xxx");
+            pane.tab('show');
+        });
+    });
+    
+    */
+          
+    </script>
+
 
 {% endblock javascripts %}
