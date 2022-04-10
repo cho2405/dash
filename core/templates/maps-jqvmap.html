@@ -72,7 +72,7 @@
 
         {% for m in months %}
         <form action="{% url 'app:maps_url' pg_num=m.TRADE_MONTH %}" method='GET'>
-            <button type='submit' class="nav-link" id="nav-profile-tab" role="tab" aria-selected="false"> {{ m.TRADE_MONTH }} 월</button>
+            <button type='submit' class="nav-link" id="nav-home" role="tab" aria-selected="false"> {{ m.TRADE_MONTH }} 월</button>
         </form>
         {% endfor %}
       
@@ -91,8 +91,7 @@
 					</div>
     
     </div>
-  <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">...</div>
-  <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">...</div>
+  
 </div>
 
 
@@ -152,8 +151,7 @@
 {% block javascripts %}
 	<!-- Atlantis DEMO methods, don't include it in your project! -->
     <script src="/static/assets/js/setting-demo2.js"></script>
-    <script>    
-    console.log("########");
+    <script>
   
 	var map = L.map('map').setView([36.74739, 128], 7);
     map.createPane('labels');
@@ -183,7 +181,6 @@
 		this._div.innerHTML = '<h4>7월 집 거래량</h4>' +  (props ?
 			'<b>' + props.SIG_KOR_NM + '</b><br />' + '(' + input_gujson[props.SIG_CD] + ' 명)'
 			: '지도에 마우스를 가져가세요');
-        console.log(props);
 	};
 	info.addTo(map);
         
@@ -349,21 +346,20 @@
             $(tableId).DataTable().table().clear().draw();
         }
     }
-        
+                              
     $("#search_gu").submit(function(e) {
         e.preventDefault();
+        
         $.ajax({
             type: "POST",
-            url: "{% url 'app:maps_url' pg_num=3 %}",
+            //url: "{% url 'app:maps_url' pg_num=3 %}",
             headers: {'X-CSRFToken': csrftoken},
             data: {                 
                 search_gu_input : $('#tokenfield1').val(),
-                 //csrfmiddlewaretoken: '{{ csrf_token }}',
-                 dataType: "json",
+                dataType: "json",
              }
         }).done(function(data) {
-            console.log('%%%%%');
-            var response = data['results'];
+            var response = data;
             
             destroyDataTable('#multi-filter-select'); //Destroy old dataTable with the old data
             var table = $('#multi-filter-select').DataTable();

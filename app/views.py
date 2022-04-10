@@ -53,16 +53,10 @@ def load_trades_json(set_month):
 def maps(request, pg_num):
     data = dict()
     context = {}
-    print('--------------')
     context['months'] = Trading.objects.values('TRADE_MONTH').distinct()
-    print(context['months'])
-    
-    
-    
+
     if request.method == 'GET':
         set_month = pg_num
-        print('GET')
-        print(set_month)
         file_name = 'TL_SCCO_SIG.json'
         context['gu_json'] = load_trades_json(set_month)
         context['geo_json'] = load_geodata(file_name)
@@ -70,27 +64,14 @@ def maps(request, pg_num):
         html_template = loader.get_template( 'maps-jqvmap.html' )
 
         return HttpResponse(html_template.render(context, request))
-        #return HttpResponse(render(request, 'maps-jqvmap.html', context))
     
-    from django.forms.models import model_to_dict
 
-    from django.core import serializers
-    import json
-    from django.core.serializers.json import DjangoJSONEncoder
     if request.method == 'POST':
-        print("----")
         if 'search_gu_input' in request.POST:
-            print( request.POST)
             search = request.POST.get('search_gu_input')
-            gu_table = Trading.objects.filter(GU_CODE=search).values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')
-            #context['results'] = serializers.serialize('json', str(list(gu_table)))
-            context['results'] =  list(gu_table)
-            #context['results'] = json.dumps(list(gu_table), cls=DjangoJSONEncoder)
-            #context['results'] = json.dumps(list(gu_table)) 
-            
-            print('%%%%%')
-            print(type(list(gu_table)))
-            return JsonResponse(context)
+            gu_table = Trading.objects.filter(GU_CODE=search).filter(TRADE_MONTH=pg_num).values('GU_CODE','DONG_NAME', 'TRADE_DATE', 'APT_NAME', 'TRADE_PRICE')
+
+            return JsonResponse(list(gu_table), safe=False)
         
         if 'search_month_input' in request.POST:
             file_name = 'TL_SCCO_SIG.json'
